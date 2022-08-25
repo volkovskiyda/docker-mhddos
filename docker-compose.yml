@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  mhddos_vpn:
+    image: ghcr.io/wfg/openvpn-client:3.1.0
+    container_name: mhddos_vpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./vpn/:/data/vpn
+    restart: unless-stopped
+    environment:
+      VPN_CONFIG_PATTERN: "*.ovpn"
+    healthcheck:
+      test: ["CMD", "nslookup", "google.com", "8.8.8.8"]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+
+  mhddos_app:
+    container_name: mhddos_app
+    image: ghcr.io/porthole-ascend-cinnamon/mhddos_proxy
+    restart: unless-stopped
+    depends_on:
+      mhddos_vpn:
+        condition: service_healthy
+    network_mode: "service:mhddos_vpn"
+    command: "--vpn"
+
+  mhddos_speedtest:
+    container_name: mhddos_speedtest
+    image: ghcr.io/volkovskiyda/speedtest
+    privileged: true
+    tty: true
+    command: "-f /dev/null"
+    entrypoint: /usr/bin/tail
+
+  mhddos_speedtest_vpn:
+    container_name: mhddos_speedtest_vpn
+    image: ghcr.io/volkovskiyda/speedtest
+    privileged: true
+    tty: true
+    command: "-f /dev/null"
+    entrypoint: /usr/bin/tail
+    depends_on:
+      mhddos_vpn:
+        condition: service_healthy
+    network_mode: "service:mhddos_vpn"
