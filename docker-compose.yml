@@ -27,7 +27,7 @@ services:
       mhddos_vpn:
         condition: service_healthy
     network_mode: "service:mhddos_vpn"
-    command: "--vpn"
+    command: "--vpn --lang en"
 
   mhddos_speedtest:
     container_name: mhddos_speedtest
